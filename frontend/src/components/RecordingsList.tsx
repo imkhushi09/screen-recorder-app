@@ -31,8 +31,6 @@ const RecordingsList = ({ refresh }: Props) => {
     }
   };
 
-  // useEffect(() => {
-  //   fetchRecordings();
   useEffect(() => {
     fetchRecordings();
   }, [refresh]);
@@ -88,6 +86,17 @@ const RecordingsList = ({ refresh }: Props) => {
         alert(`Failed to delete recording: ${err.response?.data?.message || err.message || 'Unknown error'}`);
       }
     }
+  };
+
+  // ⬇️ Download function
+  const handleDownload = (filename: string, videoUrl: string) => {
+    const link = document.createElement('a');
+    link.href = videoUrl;
+    link.download = filename;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (loading) {
@@ -170,15 +179,24 @@ const RecordingsList = ({ refresh }: Props) => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center space-x-2">
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => handleDownload(rec.filename, rec.video_url)}
+                  className="flex items-center justify-center px-3 py-2.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg text-xs font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-green-500/25 border border-green-400/30"
+                >
+                  <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                  </svg>
+                  Download
+                </button>
                 <button
                   onClick={() => window.open(rec.video_url, '_blank')}
-                  className="flex-1 flex items-center justify-center px-3 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-xs font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-blue-500/25 border border-blue-400/30"
+                  className="flex items-center justify-center px-3 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-xs font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-blue-500/25 border border-blue-400/30"
                 >
                   <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
-                  Open Video
+                  Open
                 </button>
                 <button
                   onClick={() => handleDelete(rec.filename)}
@@ -187,6 +205,7 @@ const RecordingsList = ({ refresh }: Props) => {
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
+                  Delete
                 </button>
               </div>
             </div>

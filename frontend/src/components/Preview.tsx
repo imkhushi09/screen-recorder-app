@@ -11,7 +11,7 @@ type PreviewProps = {
 };
 
 // const Preview = ({ videoBlob }: PreviewProps) => {
-const Preview = ({ videoBlob, setVideoBlob, onUploadSuccess }: PreviewProps) => {
+const Preview = ({ videoBlob, onUploadSuccess }: PreviewProps) => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
@@ -19,6 +19,7 @@ const Preview = ({ videoBlob, setVideoBlob, onUploadSuccess }: PreviewProps) => 
   const [serverVideoUrl, setServerVideoUrl] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [fileName, setFileName] = useState<string>("");
+  const [uploadedFileName, setUploadedFileName] = useState<string>("");
 
   // ✅ Create preview URL safely
   useEffect(() => {
@@ -42,6 +43,7 @@ const Preview = ({ videoBlob, setVideoBlob, onUploadSuccess }: PreviewProps) => 
     setMessage("");
     setServerVideoUrl(null);
     setFileName(""); // Clear file name for new recording
+    setUploadedFileName(""); // Clear final file name for new recording
   }, [videoBlob]);
 
   // ✅ AFTER hooks
@@ -70,19 +72,52 @@ const Preview = ({ videoBlob, setVideoBlob, onUploadSuccess }: PreviewProps) => 
             </svg>
           </div>
           <h3 className="text-xl font-semibold text-white mb-2">Upload Complete!</h3>
-          <p className="text-gray-400">Your video has been successfully uploaded and is now available in your recordings list.</p>
-          <button
-            onClick={() => {
-              setVideoBlob(null);
-              setUploaded(false);
-              setProgress(0);
-              setMessage("");
-              setServerVideoUrl(null);
-            }}
-            className="mt-4 px-6 py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-xl font-medium transition-colors duration-200 border border-blue-500/30 hover:border-blue-500/50"
-          >
-            Record New Video
-          </button>
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+            <button
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = serverVideoUrl!;
+                link.download = uploadedFileName || 'recording.webm';
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+              className="px-6 py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-xl font-medium transition-colors duration-200 border border-blue-500/30 hover:border-blue-500/50 flex items-center justify-center"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+              </svg>
+              Download Video
+            </button>
+            
+            <button
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(serverVideoUrl!);
+                  setMessage("📋 Link copied to clipboard!");
+                  setTimeout(() => setMessage("✅ Uploaded successfully!"), 2000);
+                } catch (err) {
+                  // Fallback for older browsers
+                  const textArea = document.createElement("textarea");
+                  textArea.value = serverVideoUrl!;
+                  document.body.appendChild(textArea);
+                  textArea.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(textArea);
+                  setMessage("📋 Link copied to clipboard!");
+                  setTimeout(() => setMessage("✅ Uploaded successfully!"), 2000);
+                }
+              }}
+              className="px-6 py-3 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded-xl font-medium transition-colors duration-200 border border-green-500/30 hover:border-green-500/50 flex items-center justify-center"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              Copy Link
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -132,6 +167,7 @@ const Preview = ({ videoBlob, setVideoBlob, onUploadSuccess }: PreviewProps) => 
 
         setUploaded(true);
         setServerVideoUrl(response.data.video_url);
+        setUploadedFileName(finalFileName); // Store filename for download/share
         setMessage("✅ Uploaded successfully!");
         onUploadSuccess(); //  IMPORTANT
       } catch (error: any) {
