@@ -1,3 +1,4 @@
+const API_URL = import.meta.env.VITE_API_URL;
 import axios from "axios";
 import { useState, useEffect } from "react";
 
@@ -149,8 +150,11 @@ const Preview = ({ videoBlob, onUploadSuccess }: PreviewProps) => {
       formData.append("size", sizeMB.toString());
 
       try {
+        // const response = await axios.post(
+        //   "http://127.0.0.1:8000/upload",
         const response = await axios.post(
-          "http://127.0.0.1:8000/upload",
+        `${API_URL}/upload`,
+          
           formData,
           {
             headers: {

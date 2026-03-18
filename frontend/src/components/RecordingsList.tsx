@@ -1,3 +1,4 @@
+const API_URL = import.meta.env.VITE_API_URL;
 import axios from "axios";
 import { useEffect, useState } from "react";
 
@@ -22,7 +23,7 @@ const RecordingsList = ({ refresh }: Props) => {
   // 🔹 Fetch recordings
   const fetchRecordings = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:8000/recordings");
+const res = await axios.get(`${API_URL}/recordings`);
       setRecordings(res.data);
     } catch (err) {
       console.error("Error fetching recordings", err);
@@ -45,8 +46,7 @@ const RecordingsList = ({ refresh }: Props) => {
       const encodedFilename = encodeURIComponent(filename);
 
       // Try different endpoint formats
-      let deleteUrl = `http://127.0.0.1:8000/delete/${encodedFilename}`;
-
+let deleteUrl = `${API_URL}/delete/${encodedFilename}`;
       console.log('Attempting to delete:', {
         original: filename,
         encoded: encodedFilename,
@@ -72,8 +72,8 @@ const RecordingsList = ({ refresh }: Props) => {
       if (err.response?.status === 404) {
         try {
           console.log('Trying alternative endpoint...');
-          const altUrl = `http://127.0.0.1:8000/api/delete/${encodeURIComponent(filename)}`;
-          await axios.delete(altUrl);
+const altUrl = `${API_URL}/api/delete/${encodeURIComponent(filename)}`;   
+       await axios.delete(altUrl);
 
           setRecordings((prev) =>
             prev.filter((r) => r.filename !== filename)
