@@ -94,15 +94,19 @@
 #     return {"message": "Deleted"}
 
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 import cloudinary
 import cloudinary.uploader
 import os
 from datetime import datetime
 
 from database import engine, SessionLocal
-from models import Recording
+from models import User, Recording
+from auth import hash_password, verify_password, create_token, get_current_user, get_db
 
 app = FastAPI()
 
@@ -113,7 +117,6 @@ cloudinary.config(
     api_secret=os.getenv("CLOUDINARY_API_SECRET")
 )
 
-BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 app.add_middleware(
@@ -124,36 +127,78 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Create all tables
+User.metadata.create_all(bind=engine)
 Recording.metadata.create_all(bind=engine)
 
+
+# ── AUTH ──────────────────────────────────────────
+
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+@app.post("/auth/signup")
+def signup(data: SignupRequest, db: Session = Depends(get_db)):
+    existing = db.query(User).filter(User.email == data.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    new_user = User(
+        email=data.email,
+        password=hash_password(data.password)
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    token = create_token({"sub": new_user.email})
+    return {"access_token": token, "token_type": "bearer", "email": new_user.email}
+
+
+@app.post("/auth/login")
+def login(data: LoginRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == data.email).first()
+    if not user or not verify_password(data.password, user.password):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    token = create_token({"sub": user.email})
+    return {"access_token": token, "token_type": "bearer", "email": user.email}
+
+
+# ── RECORDINGS ────────────────────────────────────
 
 @app.post("/upload")
 def upload_video(
     file: UploadFile = File(...),
     duration: float = Form(0),
-    size: float = Form(0)
+    size: float = Form(0),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    db = SessionLocal()
-
     try:
-        # Upload directly to Cloudinary
         result = cloudinary.uploader.upload(
             file.file,
             resource_type="video",
             folder="screen-recordings",
             public_id=file.filename.replace(".webm", ""),
         )
-
         video_url = result["secure_url"]
 
         new_record = Recording(
             filename=file.filename,
             duration=duration,
             size=size,
-            video_url=video_url,  # Cloudinary URL ✅
-            uploaded_at=datetime.now().isoformat()
+            video_url=video_url,
+            uploaded_at=datetime.now().isoformat(),
+            user_id=current_user.id
         )
-
         db.add(new_record)
         db.commit()
         db.refresh(new_record)
@@ -161,9 +206,6 @@ def upload_video(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Upload error: {str(e)}")
-
-    finally:
-        db.close()
 
     return {
         "id": new_record.id,
@@ -176,30 +218,31 @@ def upload_video(
 
 
 @app.get("/recordings")
-def get_recordings():
-    db = SessionLocal()
-    data = db.query(Recording).all()
-    db.close()
+def get_recordings(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    data = db.query(Recording).filter(Recording.user_id == current_user.id).all()
     return data
 
 
 @app.delete("/delete/{filename}")
-def delete_recording(filename: str):
-    db = SessionLocal()
-    record = db.query(Recording).filter(Recording.filename == filename).first()
+def delete_recording(
+    filename: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    record = db.query(Recording).filter(
+        Recording.filename == filename,
+        Recording.user_id == current_user.id
+    ).first()
 
     if not record:
-        db.close()
         raise HTTPException(status_code=404, detail="Not found")
 
     try:
-        # Delete from Cloudinary too
         public_id = f"screen-recordings/{filename.replace('.webm', '')}"
         cloudinary.uploader.destroy(public_id, resource_type="video")
     except Exception:
-        pass  # if cloudinary delete fails, still delete from DB
+        pass
 
     db.delete(record)
     db.commit()
-    db.close()
     return {"message": "Deleted"}
