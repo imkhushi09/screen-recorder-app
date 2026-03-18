@@ -1,24 +1,34 @@
 import { useState } from "react";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import Recorder from "./components/Recorder";
 import Preview from "./components/Preview";
 import RecordingsList from "./components/RecordingsList";
 
-const App = () => {
-    const [refresh, setRefresh] = useState(0);
-
+const AppContent = () => {
+  const { token, email, logout } = useAuth();
+  const [refresh, setRefresh] = useState(0);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+  const [showSignup, setShowSignup] = useState(false);
 
+  // Not logged in — show login or signup
+  if (!token) {
+    return showSignup
+      ? <Signup onSwitch={() => setShowSignup(false)} />
+      : <Login onSwitch={() => setShowSignup(true)} />;
+  }
+
+  // Logged in — show main app
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 relative overflow-hidden">
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-slate-700 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-blue-800 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-slate-700 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
       </div>
 
-      {/* Main container */}
       <div className="relative z-10 container mx-auto px-4 py-8 max-w-7xl">
+        
         {/* Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-lg rounded-2xl mb-4 border border-white/20">
@@ -26,17 +36,20 @@ const App = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
           </div>
-          <h1 className="text-5xl font-bold text-white mb-3 tracking-tight">
-            Screen Recorder
-          </h1>
-          <p className="text-xl text-white/80 max-w-2xl mx-auto">
-            Capture your screen with crystal clarity. Record, preview, and manage your videos in one seamless experience.
-          </p>
+          <h1 className="text-5xl font-bold text-white mb-3 tracking-tight">Screen Recorder</h1>
+          <p className="text-white/60 text-sm">Logged in as {email}</p>
+
+          {/* Logout button */}
+          <button
+            onClick={logout}
+            className="mt-3 px-4 py-2 bg-white/10 hover:bg-white/20 text-white/70 hover:text-white rounded-xl text-sm border border-white/20 transition-all duration-200"
+          >
+            Sign Out
+          </button>
         </div>
 
         {/* Main content grid */}
         <div className="grid lg:grid-cols-2 gap-8 mb-8">
-          {/* Recording Section */}
           <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20 shadow-2xl">
             <div className="flex items-center mb-6">
               <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center mr-3">
@@ -47,7 +60,6 @@ const App = () => {
             <Recorder setVideoBlob={setVideoBlob} />
           </div>
 
-          {/* Preview Section */}
           <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20 shadow-2xl">
             <div className="flex items-center mb-6">
               <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
@@ -58,15 +70,15 @@ const App = () => {
               </div>
               <h2 className="text-2xl font-semibold text-white">Preview & Upload</h2>
             </div>
-            <Preview 
-              videoBlob={videoBlob} 
+            <Preview
+              videoBlob={videoBlob}
               setVideoBlob={setVideoBlob}
-              onUploadSuccess={() => setRefresh(prev => prev + 1)} 
+              onUploadSuccess={() => setRefresh(prev => prev + 1)}
             />
           </div>
         </div>
 
-        {/* Recordings List Section */}
+        {/* Recordings List */}
         <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20 shadow-2xl">
           <div className="flex items-center mb-6">
             <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
@@ -82,5 +94,11 @@ const App = () => {
     </div>
   );
 };
+
+const App = () => (
+  <AuthProvider>
+    <AppContent />
+  </AuthProvider>
+);
 
 export default App;
