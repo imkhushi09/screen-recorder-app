@@ -9,56 +9,22 @@ from models import Recording
 
 app = FastAPI()
 
-# CORS
+BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Upload folder
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-# Serve uploads
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-# Create DB tables
 Recording.metadata.create_all(bind=engine)
-
-
-# ✅ UPLOAD API
-# @app.post("/upload")
-# def upload_video(
-#     file: UploadFile = File(...),
-#     duration: float = Form(...),
-#     size: float = Form(...)
-# ):
-#     db = SessionLocal()
-
-#     file_path = os.path.join(UPLOAD_DIR, file.filename)
-
-#     with open(file_path, "wb") as buffer:
-#         shutil.copyfileobj(file.file, buffer)
-
-#     video_url = f"http://127.0.0.1:8000/uploads/{file.filename}"
-
-#     new_record = Recording(
-#         filename=file.filename,
-#         duration=duration,
-#         size=size,
-#         video_url=video_url,
-#         uploaded_at=datetime.now().isoformat()
-#     )
-
-#     db.add(new_record)
-#     db.commit()
-#     db.refresh(new_record)
-#     db.close()
-
-#     return {"video_url": video_url}
 
 @app.post("/upload")
 def upload_video(
@@ -67,13 +33,12 @@ def upload_video(
     size: float = Form(0)
 ):
     db = SessionLocal()
-
     file_path = os.path.join(UPLOAD_DIR, file.filename)
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    video_url = f"http://127.0.0.1:8000/uploads/{file.filename}"
+    video_url = f"{BASE_URL}/uploads/{file.filename}"
 
     try:
         new_record = Recording(
@@ -83,18 +48,14 @@ def upload_video(
             video_url=video_url,
             uploaded_at=datetime.now().isoformat()
         )
-
         db.add(new_record)
         db.commit()
         db.refresh(new_record)
-
     except Exception as e:
         db.rollback()
-        # If DB fails, remove the uploaded file to maintain consistency
         if os.path.exists(file_path):
             os.remove(file_path)
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-
     finally:
         db.close()
 
@@ -107,8 +68,6 @@ def upload_video(
         "uploaded_at": new_record.uploaded_at
     }
 
-
-# GET ALL RECORDINGS
 @app.get("/recordings")
 def get_recordings():
     db = SessionLocal()
@@ -116,12 +75,9 @@ def get_recordings():
     db.close()
     return data
 
-
-# ✅ DELETE
 @app.delete("/delete/{filename}")
 def delete_recording(filename: str):
     db = SessionLocal()
-
     record = db.query(Recording).filter(Recording.filename == filename).first()
 
     if not record:
@@ -129,12 +85,10 @@ def delete_recording(filename: str):
         raise HTTPException(status_code=404, detail="Not found")
 
     file_path = os.path.join(UPLOAD_DIR, filename)
-
     if os.path.exists(file_path):
         os.remove(file_path)
 
     db.delete(record)
     db.commit()
     db.close()
-
     return {"message": "Deleted"}
