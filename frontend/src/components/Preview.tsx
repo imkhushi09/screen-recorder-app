@@ -15,7 +15,6 @@ const Preview = ({ videoBlob, setVideoBlob, onUploadSuccess }: PreviewProps) => 
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
   const [uploaded, setUploaded] = useState(false);
-  const [serverVideoUrl, setServerVideoUrl] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [fileName, setFileName] = useState<string>("");
 
@@ -30,7 +29,6 @@ const Preview = ({ videoBlob, setVideoBlob, onUploadSuccess }: PreviewProps) => 
     setUploaded(false);
     setProgress(0);
     setMessage("");
-    setServerVideoUrl(null);
     setFileName("");
   }, [videoBlob]);
 
@@ -64,7 +62,6 @@ const Preview = ({ videoBlob, setVideoBlob, onUploadSuccess }: PreviewProps) => 
               setUploaded(false);
               setProgress(0);
               setMessage("");
-              setServerVideoUrl(null);
             }}
             className="mt-4 px-6 py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-xl font-medium transition-colors duration-200 border border-blue-500/30 hover:border-blue-500/50"
           >
@@ -108,7 +105,6 @@ const Preview = ({ videoBlob, setVideoBlob, onUploadSuccess }: PreviewProps) => 
         });
 
         setUploaded(true);
-        setServerVideoUrl(response.data.video_url);
         setMessage("✅ Uploaded successfully!");
         onUploadSuccess();
       } catch (error: any) {
