@@ -188,6 +188,7 @@ def upload_video(
             resource_type="video",
             folder="screen-recordings",
             public_id=file.filename.replace(".webm", ""),
+             upload_preset="ksxvljqs"  
         )
         video_url = result["secure_url"]
 
