@@ -6,18 +6,10 @@ import Recorder from "./components/Recorder";
 import Preview from "./components/Preview";
 import RecordingsList from "./components/RecordingsList";
 
-const AppContent = () => {
-  const { token, email, logout } = useAuth();
+const MainApp = () => {
+  const { email, logout } = useAuth();
   const [refresh, setRefresh] = useState(0);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
-  const [showSignup, setShowSignup] = useState(false);
-
-  // Not logged in — show login or signup
-  if (!token) {
-    return showSignup
-      ? <Signup onSwitch={() => setShowSignup(false)} />
-      : <Login onSwitch={() => setShowSignup(true)} />;
-  }
 
   // Logged in — show main app
   return (
@@ -93,6 +85,20 @@ const AppContent = () => {
       </div>
     </div>
   );
+};
+
+const AppContent = () => {
+  const { token } = useAuth();
+  const [showSignup, setShowSignup] = useState(false);
+
+  // Not logged in — show login or signup
+  if (!token) {
+    return showSignup
+      ? <Signup onSwitch={() => setShowSignup(false)} />
+      : <Login onSwitch={() => setShowSignup(true)} />;
+  }
+
+  return <MainApp />;
 };
 
 const App = () => (
