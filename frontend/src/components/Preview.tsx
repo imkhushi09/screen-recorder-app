@@ -93,7 +93,7 @@ const Preview = ({ videoBlob, setVideoBlob, onUploadSuccess }: PreviewProps) => 
       formData.append("size", sizeMB.toString());
 
       try {
-        const response = await axios.post(`${API_URL}/upload`, formData, {
+         await axios.post(`${API_URL}/upload`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,   // ← token added here
