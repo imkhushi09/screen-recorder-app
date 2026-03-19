@@ -205,6 +205,7 @@ def upload_video(
 
     except Exception as e:
         db.rollback()
+        print(f"UPLOAD ERROR: {str(e)}")  # ← this will show in Render logs
         raise HTTPException(status_code=500, detail=f"Upload error: {str(e)}")
 
     return {
