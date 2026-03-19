@@ -117,6 +117,7 @@ cloudinary.config(
     api_secret=os.getenv("CLOUDINARY_API_SECRET")
 )
 
+
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 app.add_middleware(
@@ -188,6 +189,7 @@ def upload_video(
             resource_type="video",
             folder="screen-recordings",
             public_id=file.filename.replace(".webm", ""),
+             upload_preset="ml_default"
         )
         video_url = result["secure_url"]
 
@@ -205,6 +207,7 @@ def upload_video(
 
     except Exception as e:
         db.rollback()
+        print(f"UPLOAD ERROR: {str(e)}")  # ← this will show in Render logs
         raise HTTPException(status_code=500, detail=f"Upload error: {str(e)}")
 
     return {
