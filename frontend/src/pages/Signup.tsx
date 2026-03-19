@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState ,useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -10,6 +11,11 @@ const Signup = ({ onSwitch }: { onSwitch: () => void }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+  setEmail("");
+  setPassword("");
+}, []);
 
   const handleSignup = async () => {
     setLoading(true);
@@ -46,8 +52,9 @@ const Signup = ({ onSwitch }: { onSwitch: () => void }) => {
             <input
               type="email"
               value={email}
+               placeholder="you@example.com"
+               autoComplete="email"
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
               className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             />
           </div>
@@ -55,9 +62,10 @@ const Signup = ({ onSwitch }: { onSwitch: () => void }) => {
             <label className="block text-sm font-medium text-white/70 mb-2">Password</label>
             <input
               type="password"
+              placeholder="••••••••"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
               className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               onKeyDown={(e) => e.key === "Enter" && handleSignup()}
             />

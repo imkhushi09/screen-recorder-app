@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState , useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 
@@ -10,6 +10,12 @@ const Login = ({ onSwitch }: { onSwitch: () => void }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Clear fields on mount
+useEffect(() => {
+  setEmail("");
+  setPassword("");
+}, []);
 
   const handleLogin = async () => {
     setLoading(true);

@@ -25,6 +25,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.removeItem("email");
     setToken(null);
     setEmail(null);
+    // Refresh page to clear any remaining data
+    window.location.reload();
   };
 
   return (
