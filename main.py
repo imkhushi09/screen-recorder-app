@@ -111,14 +111,12 @@ from auth import hash_password, verify_password, create_token, get_current_user,
 app = FastAPI()
 
 # Cloudinary config
-# cloudinary.config(
-#     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
-#     api_key=os.getenv("CLOUDINARY_API_KEY"),
-#     api_secret=os.getenv("CLOUDINARY_API_SECRET")
-# )
 cloudinary.config(
-    cloudinary_url=os.getenv("CLOUDINARY_URL")
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
 )
+
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
@@ -191,7 +189,7 @@ def upload_video(
             resource_type="video",
             folder="screen-recordings",
             public_id=file.filename.replace(".webm", ""),
-             upload_preset="ksxvljqs"  
+             upload_preset="ml_default"
         )
         video_url = result["secure_url"]
 
